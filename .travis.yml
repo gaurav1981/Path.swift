@@ -1,11 +1,11 @@
 # only run for: merge commits, releases and pull-requests
-if: type != push OR branch = master OR branch =~ /^\d+\.\d+(\.\d+)?(-\S*)?$/
+#if: type != push OR branch = master OR branch =~ /^\d+\.\d+(\.\d+)?(-\S*)?$/
 
 stages:
   - name: pretest
   - name: test
   - name: deploy
-    if: branch =~ ^\d+\.\d+\.\d+$
+    if: branch == travis
 
 os: osx
 language: swift
@@ -15,40 +15,6 @@ xcode_scheme: Path.swift-Package
   
 jobs:
   include:
-    - script: swift test
-      name: macOS
-
-    - &xcodebuild
-      before_install: swift package generate-xcodeproj
-      xcode_destination: platform=iOS Simulator,OS=latest,name=iPhone XS
-      name: iOS
-    - <<: *xcodebuild
-      xcode_destination: platform=tvOS Simulator,OS=latest,name=Apple TV
-      name: tvOS
-    - <<: *xcodebuild
-      name: watchOS
-      script: |
-        set -o pipefail
-        xcodebuild \
-          -project Path.swift.xcodeproj \
-          -scheme Path.swift-Package \
-          -destination 'platform=watchOS Simulator,OS=latest,name=Apple Watch Series 4 - 40mm' \
-          build | xcpretty
-
-    - env: SWIFT_VERSION=4.2.1
-      os: linux
-      name: Linux
-      language: generic
-      dist: trusty
-      sudo: false
-      install: eval "$(curl -sL https://swiftenv.fuller.li/install.sh)"
-      script: swift test
-      
-    - stage: pretest
-      name: Check if Linux tests are up-to-date
-      install: swift test --generate-linuxmain
-      script: git diff --exit-code
-
     - stage: deploy
       name: Jazzy
       before_install: |
@@ -63,14 +29,12 @@ jobs:
         xcodebuild_arguments:
           - UseModernBuildSystem=NO
         output: output
-        github_url: https://github.com/mxcl/Path.swift
+        github_url: 'https://github.com/mxcl/Path.swift'
         EOF
-      install: |
-        gem install jazzy
-        swift package generate-xcodeproj
-      script: |
-        jazzy
-        rm -rf output/docsets
+        touch foo
+      install: gem install jazzy
+      before_script: swift package generate-xcodeproj
+      script: jazzy
       deploy:
         provider: pages
         skip-cleanup: true
@@ -96,8 +60,9 @@ jobs:
           s.tvos.deployment_target = '10.0'
           s.watchos.deployment_target = '3.0'
           s.source_files = 'Sources/*'
-          s.swift_version = "4.2"
+          s.swift_version = '4.2'
         end
         EOF
+        touch foo
       install: gem install cocoapods --pre
-      script: pod trunk push --allow-warnings
+      script: pod lib lint
