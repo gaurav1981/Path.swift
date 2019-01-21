@@ -18,7 +18,7 @@ jobs:
     - stage: deploy
       name: Jazzy
       before_install: |
-        cat << EOF > .jazzy.yaml
+        cat << '  EOF' > .jazzy.yaml
         module: Path
         module_version: $TRAVIS_TAG
         custom_categories:
@@ -31,7 +31,6 @@ jobs:
         output: output
         github_url: 'https://github.com/mxcl/Path.swift'
         EOF
-        touch foo
       install: gem install jazzy
       before_script: swift package generate-xcodeproj
       script: jazzy
@@ -45,7 +44,7 @@ jobs:
 
     - name: CocoaPods
       before_install: |
-        cat << EOF > Path.swift.podspec
+        cat << '  EOF' > Path.swift.podspec
         Pod::Spec.new do |s|
           s.name             = 'Path.swift'
           s.version          = '$TRAVIS_TAG'
@@ -63,6 +62,5 @@ jobs:
           s.swift_version = '4.2'
         end
         EOF
-        touch foo
       install: gem install cocoapods --pre
       script: pod lib lint
